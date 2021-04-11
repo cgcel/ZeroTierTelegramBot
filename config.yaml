@@ -1,0 +1,11 @@
+# Fill with your bot token
+# Create your bot by sending commands to @BotFather in Telegram
+bot_token: "your_bot_token"
+
+# Fill with your zerotier token
+# Get your own API Access Token at: https://my.zerotier.com/account
+zerotier_token: "your_zerotier_token"
+
+# Fill with telegram id which you want to set as admin
+admin_id:
+  - your_telegram_id
