@@ -18,17 +18,18 @@ with open("config.yaml", "r", encoding="utf-8") as f:
     ADMIN_ID = yaml_data['admin_id']
 
 # You can set parse_mode by default. HTML or MARKDOWN
-bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
+bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None, threaded=True, num_threads=5)
 
 myZerotier = MyZerotier()
 
-pushed_node_id_list = [] # 存放已推送过的新客户端
+pushed_node_id_list = []  # 存放已推送过的新客户端
+
+SUB_ADMIN_ID = []
 
 
 def check_per_min():
     global pushed_node_id_list
     total_add_node_id_list = []
-    # print("pushed_node_id_dict: ", pushed_node_id_list)
     network_list = myZerotier.get_network()
     for i in network_list:
         new_member_list = myZerotier.check_new_member(i['id'])
@@ -91,10 +92,10 @@ ManagedIPs: {}
                               call.message.id, reply_markup=None)
     elif call.data == "cb_ignore":
         msg = "Member ignored."
-        bot.edit_message_text(msg, call.message.chat.id, call.message.id, reply_markup=None)
+        bot.edit_message_text(msg, call.message.chat.id,
+                              call.message.id, reply_markup=None)
         # bot.answer_callback_query(call.id, "Answer is No")
     elif call.data.split(":")[0] == "cb_network":
-        print(call.data)
         # bot.edit_message_reply_markup(call.message.chat.id, call.message.id, reply_markup=None)
         member_list = myZerotier.get_network_member(call.data.split(":")[1])
         member_list = [
@@ -118,6 +119,14 @@ Following the commands below to use this bot:
     Show commands list.
 /get_network
     Show your zerotier networks.
+/show_sub_admin
+    Show sub admin list.
+/set_sub_admin
+    Set a telegram id as sub admin.
+/remove_sub_admin
+    Remove a telegram id from sub admin.
+/remove_all_sub_admins
+    Remove all sub admins.
 '''
         bot.send_message(message.chat.id, help_text)
 
@@ -136,24 +145,48 @@ def get_network_command(message):
                                           ['name'], i['config']['id'])
         bot.send_message(message.chat.id, send_msg, reply_markup=markup)
 
-@bot.message_handler(commands=['add_sub_admin'])
+
+@bot.message_handler(commands=['show_sub_admin'])
+def show_sub_admin(message):
+    if message.chat.id in ADMIN_ID:
+        msg = "Sub admin list:"
+        for i in SUB_ADMIN_ID:
+            msg += "\n{}".format(str(i))
+        bot.send_message(message.chat.id, msg)
+
+
+@bot.message_handler(commands=['set_sub_admin'])
+def set_sub_admin(message):
+    if message.chat.id in ADMIN_ID:
+        bot.send_message(message.chat.id, "Send me a telegram id",
+                         add_sub_admin, timeout=60)
+
+
 def add_sub_admin(message):
     if message.chat.id in ADMIN_ID:
-        bot.send_message(message.chat.id, "Send me a telegarm id", get_sub_admin, timeout=60)
+        SUB_ADMIN_ID.append(int(message.text))
 
-def get_sub_admin(message):
-    if message.chat.id in ADMIN_ID:
-        ADMIN_ID.append(int(message.text))
 
 @bot.message_handler(commands=['remove_sub_admin'])
 def remove_sub_admin(message):
-    pass
+    if message.id in ADMIN_ID:
+        bot.send_message(message.chat.id, "Send me a telegram id",
+                         del_sub_admin, timeout=60)
+
+
+def del_sub_admin(message):
+    if message.chat.id in ADMIN_ID:
+        SUB_ADMIN_ID.remove(int(message.text))
+
 
 @bot.message_handler(commands=['remove_all_sub_admins'])
 def remove_all_sub_admins(message):
-    pass
+    if message.chat.id in ADMIN_ID:
+        SUB_ADMIN_ID.clear()
+        bot.send_message(message.chat.id, "Remove success")
+
 
 if __name__ == '__main__':
     schedule.every().minute.do(check_per_min)
     threading.Thread(target=run_schedule, name="ScheduleThread").start()
-    bot.polling()
+    bot.polling(none_stop=True)
