@@ -9,3 +9,6 @@ zerotier_token: "your_zerotier_token"
 # Fill with telegram id which you want to set as admin
 admin_id:
   - your_telegram_id
+
+# Fill with refresh seconds
+refresh_seconds: 60
