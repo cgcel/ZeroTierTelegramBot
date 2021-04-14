@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # author: elvin
 
-import requests
 import json
-from requests.api import head
+
+import requests
 import yaml
 
 url_api = "https://my.zerotier.com/api"
@@ -22,16 +22,12 @@ class MyZerotier(object):
 
     def get_network(self):
         url = url_api + "/network"
-        r = self.session.get(url)
-        json_data = json.loads(r.text)
-        # print(json_data)
-        # print(len(json_data))
+        json_data = self.session.get(url).json()
         return json_data
 
     def get_network_member(self, network_id):
         url = url_api + "/network/{}/member".format(network_id)
-        r = self.session.get(url)
-        json_data = json.loads(r.text)
+        json_data = self.session.get(url).json()
         member_list = []
         for i in json_data:
             if i['networkId'] == network_id:
@@ -40,17 +36,25 @@ class MyZerotier(object):
 
     def check_new_member(self, network_id):
         url = url_api + "/network/{}/member".format(network_id)
-        r = self.session.get(url)
-        json_data = json.loads(r.text)
+        json_data = self.session.get(url).json()
         member_list = []
         for i in json_data:
-            if i['networkId'] == network_id and i['online'] == True and i['config']['authorized'] == False:
+            if i['networkId'] == network_id and i['config']['authorized'] == False:
                 member_list.append(i)
         return member_list
+
+    def accept_member(self, network_id, node_id):
+        url = url_api + "/network/{}/member/{}".format(network_id, node_id)
+        form_data = {
+            "config": {
+                "authorized": True
+            }
+        }
+        payload = json.dumps(form_data)
+        json_data = self.session.post(url, data=payload).json()
+        return json_data
 
 
 if __name__ == "__main__":
     myZerotier = MyZerotier()
-    # myZerotier.get_network()
-    # print(myZerotier.get_network_member("d3ecf5726d7c94dd"))
-    print(myZerotier.check_new_member("abfd31bd4779f905"))
+    print(myZerotier.get_network())

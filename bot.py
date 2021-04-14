@@ -3,6 +3,7 @@
 
 import threading
 import time
+from datetime import datetime
 
 import schedule
 import telebot
@@ -16,49 +17,55 @@ with open("config.yaml", "r", encoding="utf-8") as f:
     yaml_data = yaml.safe_load(f)
     BOT_TOKEN = yaml_data['bot_token']
     ADMIN_ID = yaml_data['admin_id']
+    REFRESH_SECONDS = yaml_data['refresh_seconds']
 
 # You can set parse_mode by default. HTML or MARKDOWN
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None, threaded=True, num_threads=5)
 
 myZerotier = MyZerotier()
 
-pushed_node_id_list = []  # 存放已推送过的新客户端
+pushed_node_id = {}  # 存放已推送过的新客户端
 
 SUB_ADMIN_ID = []
 
 
 def check_per_min():
     global pushed_node_id_list
-    total_add_node_id_list = []
     network_list = myZerotier.get_network()
-    for i in network_list:
-        new_member_list = myZerotier.check_new_member(i['id'])
-        add_member_list = [
-            x for x in new_member_list if x['nodeId'] not in pushed_node_id_list]
-        total_add_node_id_list += [x['nodeId'] for x in new_member_list]
-        if len(add_member_list) > 0:
-            for i in add_member_list:
-                msg = """New member attached!
+    now = datetime.now()
+    timestamp_now = now.timestamp()
+    for network in network_list:
+        new_member_list = myZerotier.check_new_member(network['id'])
+        for new_member in new_member_list:
+            if new_member['nodeId'] not in pushed_node_id:
+                send_msg = """New member attached!
 networkId: {}
 nodeId: {}
-"""
-                send_msg = msg.format(i['networkId'], i['nodeId'])
-                for id in ADMIN_ID:
-                    bot.send_message(
-                        id, send_msg, reply_markup=get_new_member_markup(i['networkId'], i['nodeId']))
-    remove_list = [
-        x for x in pushed_node_id_list if x not in total_add_node_id_list]
-    add_list = [
-        x for x in total_add_node_id_list if x not in pushed_node_id_list]
-    if len(total_add_node_id_list) > 0:
-        if len(remove_list) > 0:
-            for i in remove_list:
-                pushed_node_id_list.remove(i)
-        if len(add_list) > 0:
-            for i in add_list:
-                pushed_node_id_list.append(i)
-    else:
-        return
+online: {}
+""".format(new_member['networkId'], new_member['nodeId'], new_member['online'])
+                pushed_node_id[new_member['nodeId']] = {
+                    'online': new_member['online']}
+                print("new pushed", pushed_node_id)
+                for id in ADMIN_ID or SUB_ADMIN_ID:
+                    bot.send_message(id, send_msg, reply_markup=new_member_options_markup(
+                        new_member['networkId'], new_member['nodeId']))
+
+            elif new_member['nodeId'] in pushed_node_id:
+                if pushed_node_id[new_member['nodeId']]['online'] != new_member['online']:
+                    print("test data", new_member['nodeId'], new_member['online'])
+                    if pushed_node_id[new_member['nodeId']]['online'] == False:
+                        send_msg = """New member attached!
+networkId: {}
+nodeId: {}
+online: {}
+""".format(new_member['networkId'], new_member['nodeId'], new_member['online'])
+                        pushed_node_id[new_member['nodeId']]['online'] = True
+                        print("repeat pushed", pushed_node_id)
+                        for id in ADMIN_ID or SUB_ADMIN_ID:
+                            bot.send_message(id, send_msg, reply_markup=new_member_options_markup(
+                                new_member['networkId'], new_member['nodeId']))
+                    elif pushed_node_id[new_member['nodeId']]['online'] == True:
+                        pushed_node_id[new_member['nodeId']]['online'] = False
 
 
 def run_schedule():
@@ -67,7 +74,7 @@ def run_schedule():
         time.sleep(1)
 
 
-def get_new_member_markup(network_id, node_id):
+def new_member_options_markup(network_id, node_id):
     markup = InlineKeyboardMarkup()
     markup.row_width = 2
     markup.add(InlineKeyboardButton("Accept", callback_data="cb_accept:{},{}".format(network_id, node_id)),
@@ -187,6 +194,6 @@ def remove_all_sub_admins(message):
 
 
 if __name__ == '__main__':
-    schedule.every().minute.do(check_per_min)
+    schedule.every(REFRESH_SECONDS).seconds.do(check_per_min)
     threading.Thread(target=run_schedule, name="ScheduleThread").start()
-    bot.polling(none_stop=True)
+    bot.infinity_polling()
