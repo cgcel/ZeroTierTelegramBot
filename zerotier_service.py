@@ -20,10 +20,15 @@ class MyZerotier(object):
         self.session = requests.Session()
         self.session.headers.update(header)
 
-    def get_network(self):
-        url = url_api + "/network"
-        json_data = self.session.get(url).json()
-        return json_data
+    def get_network(self, *args):
+        if len(args) == 1:
+            url = url_api + "/network/{}".format(args[0])
+            json_data = self.session.get(url).json()
+            return json_data
+        elif len(args) == 0:
+            url = url_api + "/network"
+            json_data = self.session.get(url).json()
+            return json_data
 
     def get_network_member(self, network_id):
         url = url_api + "/network/{}/member".format(network_id)
@@ -54,7 +59,27 @@ class MyZerotier(object):
         json_data = self.session.post(url, data=payload).json()
         return json_data
 
+    def reject_member(self, network_id, node_id):
+        url = url_api + "/network/{}/member/{}".format(network_id, node_id)
+        r = self.session.delete(url)
+        if r.status_code == 200:
+            return True
+        else:
+            return False
+
+    def set_member_name(self, network_id, node_id, member_name):
+        url = url = url_api + \
+            "/network/{}/member/{}".format(network_id, node_id)
+        form_data = {
+            "name": member_name
+            }
+        payload = json.dumps(form_data)
+        json_data = self.session.post(url, data=payload).json()
+        return json_data
+
 
 if __name__ == "__main__":
     myZerotier = MyZerotier()
-    print(myZerotier.get_network())
+    # print(myZerotier.get_network())
+    print(myZerotier.get_network_member('d3ecf5726d7c94dd')
+          [0]['config']['ipAssignments'][0])
