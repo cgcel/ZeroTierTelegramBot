@@ -49,10 +49,30 @@ class MyZerotier(object):
         return member_list
 
     def accept_member(self, network_id, node_id):
+        """Accept member which requires to join network.
+
+        Args:
+            network_id ([type]): [description]
+            node_id ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """
         url = url_api + "/network/{}/member/{}".format(network_id, node_id)
         form_data = {
             "config": {
                 "authorized": True
+            }
+        }
+        payload = json.dumps(form_data)
+        json_data = self.session.post(url, data=payload).json()
+        return json_data
+
+    def unauth_member(self, network_id: str, node_id: str):
+        url = url_api + "/network/{}/member/{}".format(network_id, node_id)
+        form_data = {
+            "config": {
+                "authorized": False
             }
         }
         payload = json.dumps(form_data)
