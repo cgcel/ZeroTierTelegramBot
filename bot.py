@@ -20,16 +20,18 @@ with open("config.yaml", "r", encoding="utf-8") as f:
     REFRESH_SECONDS = yaml_data['refresh_seconds']
 
 # You can set parse_mode by default. HTML or MARKDOWN
-bot = telebot.AsyncTeleBot(BOT_TOKEN, parse_mode=None)
+bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
 
 myZerotier = MyZerotier()
 
-pushed_node_id = {}  # 存放已推送过的新客户端
+pushed_node_id = {}  # store pushed node
 
-SUB_ADMIN_ID = [] # 存放子管理员
+SUB_ADMIN_ID = []  # store sub admins' telegram id
 
 
 def check_per_min():
+    """check for updates from ZeroTier Web API
+    """        
     global pushed_node_id_list
     network_list = myZerotier.get_network()
     for network in network_list:
@@ -37,28 +39,28 @@ def check_per_min():
         for new_member in new_member_list:
             if new_member['nodeId'] not in pushed_node_id:
                 send_msg = """New member attached!
-networkId: {}
-nodeId: {}
-online: {}
+networkId: `{}`
+nodeId: `{}`
+online: `{}`
 """.format(new_member['networkId'], new_member['nodeId'], new_member['online'])
                 pushed_node_id[new_member['nodeId']] = {
                     'online': new_member['online']}
                 for id in ADMIN_ID or SUB_ADMIN_ID:
                     bot.send_message(id, send_msg, reply_markup=new_member_options_markup(
-                        new_member['networkId'], new_member['nodeId']))
+                        new_member['networkId'], new_member['nodeId']), parse_mode="markdown")
 
             elif new_member['nodeId'] in pushed_node_id:
                 if pushed_node_id[new_member['nodeId']]['online'] != new_member['online']:
                     if pushed_node_id[new_member['nodeId']]['online'] == False:
                         send_msg = """New member attached!
-networkId: {}
-nodeId: {}
-online: {}
+networkId: `{}`
+nodeId: `{}`
+online: `{}`
 """.format(new_member['networkId'], new_member['nodeId'], new_member['online'])
                         pushed_node_id[new_member['nodeId']]['online'] = True
                         for id in ADMIN_ID or SUB_ADMIN_ID:
                             bot.send_message(id, send_msg, reply_markup=new_member_options_markup(
-                                new_member['networkId'], new_member['nodeId']))
+                                new_member['networkId'], new_member['nodeId']), parse_mode="markdown")
                     elif pushed_node_id[new_member['nodeId']]['online'] == True:
                         pushed_node_id[new_member['nodeId']]['online'] = False
 
@@ -95,13 +97,23 @@ def network_member_options_markup(network_id, display_mode):
     markup.row_width = 3
     if display_mode == "ip":
         markup.add(InlineKeyboardButton("Back", callback_data="cb_back"),
-                InlineKeyboardButton("Show nodeId", callback_data="cb_show_node_id:{}".format(network_id)),
-                InlineKeyboardButton("Refresh", callback_data="cb_refresh_network_status:{}".format(network_id)))
+                   InlineKeyboardButton(
+                       "Show nodeId", callback_data="cb_show_node_id:{}".format(network_id)),
+                   InlineKeyboardButton("Refresh", callback_data="cb_refresh_network_status:{}".format(network_id)))
     elif display_mode == "node_id":
         markup.add(InlineKeyboardButton("Back", callback_data="cb_back"),
-                InlineKeyboardButton("Show IP", callback_data="cb_show_ip:{}".format(network_id)),
-                InlineKeyboardButton("Refresh", callback_data="cb_refresh_network_status:{}".format(network_id)))
+                   InlineKeyboardButton(
+                       "Show IP", callback_data="cb_show_ip:{}".format(network_id)),
+                   InlineKeyboardButton("Refresh", callback_data="cb_refresh_network_status:{}".format(network_id)))
     return markup
+
+def set_name_options_markup(network_id, node_id):
+    markup = InlineKeyboardMarkup()
+    markup.row_width = 2
+    markup.add(InlineKeyboardButton("Yes", callback_data="cb_set_name_yes:{}:{}".format(network_id, node_id)),
+               InlineKeyboardButton("Later", callback_data="cb_set_name_later"))
+    return markup
+
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -111,16 +123,21 @@ def callback_query(call):
         network_id = call.data.split(":")[1].split(",")[0]
         node_id = call.data.split(":")[1].split(",")[1]
         json_data = myZerotier.accept_member(network_id, node_id)
+        network_id = json_data['networkId']
+        node_id = json_data['nodeId']
+        member_name = "None" if len(json_data['name']) == 0 else json_data['name']
+        member_ip = str(json_data['config']['ipAssignments'][0])
         msg = """Member accepted!
-NetworkId: {}
-NodeId: {}
-Name: {}
-ManagedIPs: {}
-""".format(json_data['networkId'], json_data['nodeId'], json_data['name'], str(json_data['config']['ipAssignments']))
+NetworkId: `{}`
+NodeId: `{}`
+Name: `{}`
+ManagedIPs: `{}`
+*Set a name for this member?*
+""".format(network_id, node_id, member_name, member_ip)
         # bot.answer_callback_query(call.id, "Answer is Yes")
         bot.edit_message_text(msg, call.message.chat.id,
-                              call.message.id, reply_markup=None)
-        pushed_node_id.pop(node_id)  # 允许节点后从字典里删除
+                              call.message.id, reply_markup=set_name_options_markup(network_id, node_id), parse_mode="markdown")
+        pushed_node_id.pop(node_id)  # delete node from dict after accepted
     elif call.data.split(":")[0] == "cb_reject":
         network_id = call.data.split(":")[1].split(",")[0]
         node_id = call.data.split(":")[1].split(",")[1]
@@ -194,7 +211,7 @@ _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         bot.edit_message_text(
             send_msg, call.message.chat.id, call.message.id, reply_markup=network_member_options_markup(network_id, "node_id"), parse_mode="markdown")
-    
+
     elif call.data == "cb_back" or call.data == "cb_refresh_network_list":
         if call.message.chat.id in ADMIN_ID or SUB_ADMIN_ID:
             json_data = myZerotier.get_network()
@@ -209,6 +226,17 @@ _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             bot.edit_message_text(send_msg, call.message.chat.id, call.message.id,
                                   reply_markup=network_items_markup(payload), parse_mode="markdown")
+    
+    elif call.data.split(":")[0] == "cb_set_name_yes":
+        network_id = call.data.split(":")[1]
+        node_id = call.data.split(":")[2]
+        send_msg = """Set up member name:
+NetworkId: `{}`
+NodeId: `{}`
+*Reply this message with your prefer member name*""".format(network_id, node_id)
+        msg = bot.edit_message_text(send_msg, call.message.chat.id, call.message.id, parse_mode="markdown")
+        bot.register_for_reply(msg, set_name, network_id, node_id)
+
 
 
 @bot.message_handler(commands=['start', 'help'])
@@ -256,11 +284,15 @@ def set_member_name_command(message):
             node_id = message.text.split(" ")[1]
             msg = bot.send_message(message.chat.id, "Send me the new name:")
             # bot.register_next_step_handler(msg, )
+
             pass
 
 
-def set_name(message):
-    pass
+def set_name(message, network_id, node_id):
+    if message.chat.id in ADMIN_ID:
+        myZerotier.set_member_name(network_id, node_id, message.text)
+        bot.send_message(message.chat.id, "Done.")
+
 
 
 @bot.message_handler(commands=['show_sub_admin'])
@@ -272,15 +304,16 @@ def show_sub_admin_command(message):
         else:
             msg = "Sub admin list:"
             for i in SUB_ADMIN_ID:
-                msg += "\n{}".format(str(i))
-            bot.send_message(message.chat.id, msg)
+                msg += "\n`{}`".format(str(i))
+            bot.send_message(message.chat.id, msg, parse_mode="markdown")
 
 
 @bot.message_handler(commands=['set_sub_admin'])
 def set_sub_admin_command(message):
     if message.chat.id in ADMIN_ID:
-        msg = bot.send_message(message.chat.id, "Send me a telegram id:")
-        bot.register_next_step_handler(msg, add_sub_admin)
+        msg = bot.send_message(
+            message.chat.id, "Reply to this message and send me a telegram id.")
+        bot.register_for_reply(msg, add_sub_admin)
 
 
 def add_sub_admin(message):
@@ -297,8 +330,9 @@ def add_sub_admin(message):
 @bot.message_handler(commands=['remove_sub_admin'])
 def remove_sub_admin_command(message):
     if message.chat.id in ADMIN_ID:
-        msg = bot.send_message(message.chat.id, "Send me a telegram id:")
-        bot.register_next_step_handler(msg, del_sub_admin)
+        msg = bot.send_message(
+            message.chat.id, "Reply to this message and send me a telegram id.")
+        bot.register_for_reply(msg, del_sub_admin)
 
 
 def del_sub_admin(message):
@@ -310,7 +344,7 @@ def del_sub_admin(message):
                 message.text), parse_mode="markdown")
         else:
             bot.send_message(
-                message.chat.id, "This is not a sub admin, try again. /remove_sub_admin")
+                message.chat.id, "This is not a sub admin. /show_sub_admin")
 
 
 @bot.message_handler(commands=['remove_all_sub_admins'])
@@ -318,7 +352,7 @@ def remove_all_sub_admins_command(message):
     if message.chat.id in ADMIN_ID:
         if len(SUB_ADMIN_ID) > 0:
             SUB_ADMIN_ID.clear()
-            bot.send_message(message.chat.id, "Remove success")
+            bot.send_message(message.chat.id, "Removed.")
         else:
             bot.send_message(
                 message.chat.id, "There are no sub admins to remove!")
