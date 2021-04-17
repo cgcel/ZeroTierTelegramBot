@@ -31,7 +31,7 @@ SUB_ADMIN_ID = []  # store sub admins' telegram id
 
 def check_per_min():
     """check for updates from ZeroTier Web API
-    """        
+    """
     global pushed_node_id_list
     network_list = myZerotier.get_network()
     for network in network_list:
@@ -107,6 +107,7 @@ def network_member_options_markup(network_id, display_mode):
                    InlineKeyboardButton("Refresh", callback_data="cb_refresh_network_status:{}".format(network_id)))
     return markup
 
+
 def set_name_options_markup(network_id, node_id):
     markup = InlineKeyboardMarkup()
     markup.row_width = 2
@@ -114,6 +115,11 @@ def set_name_options_markup(network_id, node_id):
                InlineKeyboardButton("Later", callback_data="cb_set_name_later"))
     return markup
 
+
+@bot.callback_query_handler(func=lambda call: call.data == "cb_set_name_later")
+def callback_query(call):
+    bot.edit_message_reply_markup(
+        call.message.chat.id, call.message.id, reply_markup=None)
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -125,8 +131,10 @@ def callback_query(call):
         json_data = myZerotier.accept_member(network_id, node_id)
         network_id = json_data['networkId']
         node_id = json_data['nodeId']
-        member_name = "None" if len(json_data['name']) == 0 else json_data['name']
-        member_ip = str(json_data['config']['ipAssignments'][0])
+        member_name = "None" if len(
+            json_data['name']) == 0 else json_data['name']
+        member_ip = "None" if len(
+            json_data['config']['ipAssignments']) == 0 else json_data['config']['ipAssignments'][0]
         msg = """Member accepted!
 NetworkId: `{}`
 NodeId: `{}`
@@ -137,7 +145,10 @@ ManagedIPs: `{}`
         # bot.answer_callback_query(call.id, "Answer is Yes")
         bot.edit_message_text(msg, call.message.chat.id,
                               call.message.id, reply_markup=set_name_options_markup(network_id, node_id), parse_mode="markdown")
-        pushed_node_id.pop(node_id)  # delete node from dict after accepted
+        try:
+            pushed_node_id.pop(node_id)  # delete node from dict after accepted
+        except:
+            pass
     elif call.data.split(":")[0] == "cb_reject":
         network_id = call.data.split(":")[1].split(",")[0]
         node_id = call.data.split(":")[1].split(",")[1]
@@ -226,7 +237,7 @@ _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             bot.edit_message_text(send_msg, call.message.chat.id, call.message.id,
                                   reply_markup=network_items_markup(payload), parse_mode="markdown")
-    
+
     elif call.data.split(":")[0] == "cb_set_name_yes":
         network_id = call.data.split(":")[1]
         node_id = call.data.split(":")[2]
@@ -234,9 +245,9 @@ _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 NetworkId: `{}`
 NodeId: `{}`
 *Reply this message with your prefer member name*""".format(network_id, node_id)
-        msg = bot.edit_message_text(send_msg, call.message.chat.id, call.message.id, parse_mode="markdown")
+        msg = bot.edit_message_text(
+            send_msg, call.message.chat.id, call.message.id, parse_mode="markdown")
         bot.register_for_reply(msg, set_name, network_id, node_id)
-
 
 
 @bot.message_handler(commands=['start', 'help'])
@@ -292,7 +303,6 @@ def set_name(message, network_id, node_id):
     if message.chat.id in ADMIN_ID:
         myZerotier.set_member_name(network_id, node_id, message.text)
         bot.send_message(message.chat.id, "Done.")
-
 
 
 @bot.message_handler(commands=['show_sub_admin'])
