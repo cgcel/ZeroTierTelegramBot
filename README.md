@@ -35,7 +35,7 @@
     remove_all_sub_admins - Remove all sub admins.
     ```
 
-3. Clone Reposity:
+3. Clone repository:
 
     ```
     $ git clone https://github.com/koonchung/ZeroTierTelegramBot.git
