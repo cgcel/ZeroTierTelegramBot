@@ -2,6 +2,17 @@
 
 **ZeroTierTelegramBot** is a telegram bot which helps you manage your [ZeroTier Network](https://my.zerotier.com/), runs on Python 3+. The API requests base on [ZeroTier Central API v1](https://apidocs.zerotier.com/).
 
+## Bot Features
+
+* Show networks info
+* Show network members info
+* Set member name
+* Authorize new member
+* Unauthorize member
+* Set sub admin (Invite your friends to manage the network with you)
+* Show sub admin list
+* Remove sub admin
+
 ## Getting Started
 
 1. Create your own ZeroTier Web API Token:
