@@ -9,9 +9,7 @@
 * Set member name
 * Authorize new member
 * Unauthorize member
-* Set sub admin (Invite your friends to manage the network with you)
-* Show sub admin list
-* Remove sub admin
+* Set sub admin (Invite your friends to group chat and manage the network with you)
 
 ## Getting Started
 
@@ -29,10 +27,6 @@
     set_member_name - Set your member's name by using this command.
     auth_member - Authorize a member.
     unauth_member - Unauthorize a member.
-    show_sub_admin - Show sub admin list.
-    set_sub_admin - Set a telegram id as sub admin.
-    remove_sub_admin - Remove a telegram id from sub admin.
-    remove_all_sub_admins - Remove all sub admins.
     ```
 
 3. Clone repository:
@@ -73,4 +67,5 @@
     $ python3 bot
     ```
 
+    Invite your bot to a group chat and promote to admin, then send `/start@your_bot` in group chat, and you can start to manage your ZeroTier Networks.
 
