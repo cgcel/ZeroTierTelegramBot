@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # author: elvin
 
@@ -27,6 +27,15 @@ groups_id_list = []  # store groups' telegram id
 
 
 def is_chat_admin(message, id: str):
+    """Use this funtion to check member's permission
+
+    Args:
+        message ([type]): [description]
+        id (str): [description]
+
+    Returns:
+        bool: Return True for admin, False for common user
+    """
     chat_admin_list = bot.get_chat_administrators(message.chat.id)
     chat_admin_list = [x.user.id for x in chat_admin_list]
     if len(list(set(ADMIN_ID).intersection(set(chat_admin_list)))) > 0:
@@ -47,6 +56,7 @@ def check_per_min():
         for new_member in new_member_list:
             if new_member['nodeId'] not in pushed_node_id:
                 send_msg = """*New member attached!*
+
 networkId: `{}`
 nodeId: `{}`
 online: `{}`
@@ -61,6 +71,7 @@ online: `{}`
                 if pushed_node_id[new_member['nodeId']]['online'] != new_member['online']:
                     if pushed_node_id[new_member['nodeId']]['online'] == False:
                         send_msg = """*New member attached!*
+
 networkId: `{}`
 nodeId: `{}`
 online: `{}`
@@ -116,71 +127,75 @@ def network_member_options_markup(network_id, display_mode):
     return markup
 
 
-def set_name_options_markup(network_id, node_id):
-    markup = InlineKeyboardMarkup()
-    markup.row_width = 2
-    markup.add(InlineKeyboardButton("Yes", callback_data="cb_set_name_yes:{}:{}".format(network_id, node_id)),
-               InlineKeyboardButton("Later", callback_data="cb_set_name_later"))
-    return markup
-
-
-@bot.callback_query_handler(func=lambda call: call.data == "cb_set_name_later")
-def callback_query(call):
-    bot.edit_message_reply_markup(
-        call.message.chat.id, call.message.id, reply_markup=None)
-
-
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
+    """Callback query function, define the InlineKeyboardButton callback
+
+    Args:
+        call ([type]): [description]
+    """    
+
     if call.data.split(":")[0] == "cb_accept":
         global pushed_node_id
         network_id = call.data.split(":")[1].split(",")[0]
         node_id = call.data.split(":")[1].split(",")[1]
-        json_data = myZeroTier.set_up_member(network_id, node_id)
-        network_id = json_data['networkId']
-        node_id = json_data['nodeId']
-        member_name = "None" if len(
-            json_data['name']) == 0 else json_data['name']
-        member_ip = "None" if len(
-            json_data['config']['ipAssignments']) == 0 else json_data['config']['ipAssignments'][0]
-        msg = """*Member accepted by admin*:
+        # check if button clicked by admin
+        if is_chat_admin(call.message, call.from_user.id):
+            json_data = myZeroTier.set_up_member(network_id, node_id)
+            network_id = json_data['networkId']
+            node_id = json_data['nodeId']
+            member_name = "None" if len(
+                json_data['name']) == 0 else json_data['name']
+            member_ip = "None" if len(
+                json_data['config']['ipAssignments']) == 0 else json_data['config']['ipAssignments'][0]
+            msg = """*Member accepted by admin* @{}
+
 NetworkId: `{}`
 NodeId: `{}`
 Name: `{}`
 ManagedIPs: `{}`
-*Set a name for this member?*
-""".format(network_id, node_id, member_name, member_ip)
-        # bot.answer_callback_query(call.id, "Answer is Yes")
-        bot.edit_message_text(msg, call.message.chat.id,
-                              call.message.id, reply_markup=set_name_options_markup(network_id, node_id), parse_mode="markdown")
-        try:
-            pushed_node_id.pop(node_id)  # delete node from dict after accepted
-        except:
-            pass
+
+_Set name by repling this message with your prefer name_""".format(call.from_user.username, network_id, node_id, member_name, member_ip)
+            send_msg = bot.edit_message_text(
+                msg, call.message.chat.id, call.message.id, reply_markup=None, parse_mode="markdown")
+            bot.register_for_reply(
+                send_msg, set_member_name, network_id, node_id)
+            try:
+                # delete node from dict after accepted
+                pushed_node_id.pop(node_id)
+            except:
+                pass
+        else:
+            bot.answer_callback_query(call.id, "Admin only!")
+
     elif call.data.split(":")[0] == "cb_reject":
         network_id = call.data.split(":")[1].split(",")[0]
         node_id = call.data.split(":")[1].split(",")[1]
-        msg = """*Member rejected by admin*:
+        if is_chat_admin(call.message, call.from_user.id):
+            msg = """*Member rejected by admin* @{}
+
 NetworkId: `{}`
-NodeId: `{}`""".format(network_id, node_id)
-        if myZeroTier.reject_member(network_id, node_id):
-            bot.edit_message_text(msg, call.message.chat.id,
-                                  call.message.id, reply_markup=None, parse_mode="markdown")
-        try:
-            pushed_node_id.pop(node_id)
-        except:
-            pass
+NodeId: `{}`""".format(call.from_user.username, network_id, node_id)
+            if myZeroTier.reject_member(network_id, node_id):
+                bot.edit_message_text(msg, call.message.chat.id,
+                                      call.message.id, reply_markup=None, parse_mode="markdown")
+            try:
+                pushed_node_id.pop(node_id)
+            except:
+                pass
+
     elif call.data.split(":")[0] == "cb_ignore":
         network_id = call.data.split(":")[1].split(",")[0]
         node_id = call.data.split(":")[1].split(",")[1]
-        msg = """*Member ignored by admin*:
+        if is_chat_admin(call.message, call.from_user.id):
+            msg = """*Member ignored by admin* @{}
+
 NetworkId: `{}`
-NodeId: `{}`""".format(network_id, node_id)
-        bot.edit_message_text(msg, call.message.chat.id,
-                              call.message.id, reply_markup=None, parse_mode="markdown")
-        # bot.answer_callback_query(call.id, "Answer is No")
+NodeId: `{}`""".format(call.from_user.username, network_id, node_id)
+            bot.edit_message_text(msg, call.message.chat.id,
+                                  call.message.id, reply_markup=None, parse_mode="markdown")
+
     elif call.data.split(":")[0] == "cb_network" or call.data.split(":")[0] == "cb_refresh_network_status" or call.data.split(":")[0] == "cb_show_ip":
-        # bot.edit_message_reply_markup(call.message.chat.id, call.message.id, reply_markup=None)
         network_id = call.data.split(":")[1]
         member_list = myZeroTier.get_network_member(network_id)
         member_list = [
@@ -197,7 +212,7 @@ NodeId: `{}`""".format(network_id, node_id)
         send_msg = """Network *{}*:
 -----------------------------------------------------------
 🟢 -- _Online_  🔴 -- _Offline_
-✅ -- _Authorized_  ❎ -- _Unauthorized_
+☑ -- _Authorized_  ◻ -- _Unauthorized_
 -----------------------------------------------------------""".format(network_name.replace('_', '-'))
         for member in member_list:
             format_name = "None" if len(
@@ -205,13 +220,13 @@ NodeId: `{}`""".format(network_id, node_id)
             format_ip = "None" if len(
                 member['ipAssignments']) == 0 else member['ipAssignments'][0]
             if member['online'] == True and member['authorized'] == True:
-                send_msg += "\n🟢✅ {}: `{}`".format(format_name, format_ip)
+                send_msg += "\n🟢☑ {}: `{}`".format(format_name, format_ip)
             elif member['online'] == False and member['authorized'] == True:
-                send_msg += "\n🔴✅ {}: `{}`".format(format_name, format_ip)
+                send_msg += "\n🔴☑ {}: `{}`".format(format_name, format_ip)
             elif member['online'] == True and member['authorized'] == False:
-                send_msg += "\n🟢❎ {}: `{}`".format(format_name, format_ip)
+                send_msg += "\n🟢◻ {}: `{}`".format(format_name, format_ip)
             elif member['online'] == False and member['authorized'] == False:
-                send_msg += "\n🔴❎ {}: `{}`".format(format_name, format_ip)
+                send_msg += "\n🔴◻ {}: `{}`".format(format_name, format_ip)
         send_msg += """
 -----------------------------------------------------------
 _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
@@ -219,7 +234,6 @@ _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             send_msg, call.message.chat.id, call.message.id, reply_markup=network_member_options_markup(network_id, "ip"), parse_mode="markdown")
 
     elif call.data.split(":")[0] == "cb_show_node_id":
-        # bot.edit_message_reply_markup(call.message.chat.id, call.message.id, reply_markup=None)
         network_id = call.data.split(":")[1]
         member_list = myZeroTier.get_network_member(network_id)
         member_list = [
@@ -236,20 +250,20 @@ _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         send_msg = """Network *{}*:
 -----------------------------------------------------------
 🟢 -- _Online_  🔴 -- _Offline_
-✅ -- _Authorized_  ❎ -- _Unauthorized_
+☑ -- _Authorized_  ◻ -- _Unauthorized_
 -----------------------------------------------------------""".format(network_name.replace('_', '-'))
         for member in member_list:
             format_name = "None" if len(
                 member['name']) == 0 else member['name'].replace('_', '-')
             node_id = member['nodeId']
             if member['online'] == True and member['authorized'] == True:
-                send_msg += "\n🟢✅ {}: `{}`".format(format_name, node_id)
+                send_msg += "\n🟢☑ {}: `{}`".format(format_name, node_id)
             elif member['online'] == False and member['authorized'] == True:
-                send_msg += "\n🔴✅ {}: `{}`".format(format_name, node_id)
+                send_msg += "\n🔴☑ {}: `{}`".format(format_name, node_id)
             elif member['online'] == True and member['authorized'] == False:
-                send_msg += "\n🟢❎ {}: `{}`".format(format_name, node_id)
+                send_msg += "\n🟢◻ {}: `{}`".format(format_name, node_id)
             elif member['online'] == False and member['authorized'] == False:
-                send_msg += "\n🔴❎ {}: `{}`".format(format_name, node_id)
+                send_msg += "\n🔴◻ {}: `{}`".format(format_name, node_id)
         send_msg += """
 -----------------------------------------------------------
 _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
@@ -270,24 +284,28 @@ _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         bot.edit_message_text(send_msg, call.message.chat.id, call.message.id,
                               reply_markup=network_items_markup(payload), parse_mode="markdown")
 
-    elif call.data.split(":")[0] == "cb_set_name_yes":
-        network_id = call.data.split(":")[1]
-        node_id = call.data.split(":")[2]
-        send_msg = """Set up member name:
-NetworkId: `{}`
-NodeId: `{}`
-*Reply this message with your prefer member name*""".format(network_id, node_id)
-        msg = bot.edit_message_text(
-            send_msg, call.message.chat.id, call.message.id, parse_mode="markdown")
-        bot.register_for_reply(msg, set_name, network_id, node_id)
+
+@bot.message_handler(commands=['start'])
+def start_command(message):
+    if message.chat.type == "group":
+        if message.from_user.id in ADMIN_ID:
+            if message.chat.id not in groups_id_list:
+                groups_id_list.append(message.chat.id)
+                bot.send_message(
+                    message.chat.id, "Bot started, group chat registed. /help")
+    elif message.chat.type == "private":
+        if message.chat.id in ADMIN_ID:
+            bot.send_message(
+                message.chat.id, "Add me to a group chat and /start me.")
 
 
-@bot.message_handler(commands=['start', 'help'])
+@bot.message_handler(commands=['help'])
 def help_commad(message):
-    if is_chat_admin(message, message.from_user.id):
-        if message.chat.id not in groups_id_list:
-            groups_id_list.append(message.chat.id)
-        help_text = '''
+    if message.chat.type == "group":
+        if is_chat_admin(message, message.from_user.id):
+            if message.chat.id not in groups_id_list:
+                groups_id_list.append(message.chat.id)
+            help_text = '''
 Following the commands below to use this bot:
 /help
     Show commands list.
@@ -300,7 +318,11 @@ Following the commands below to use this bot:
 /unauth_member network_id node_id
     Unauthorize a member.
 '''
-        bot.send_message(message.chat.id, help_text)
+            bot.send_message(message.chat.id, help_text)
+    elif message.chat.type == "private":
+        if message.chat.id in ADMIN_ID:
+            bot.send_message(
+                message.chat.id, "Add me to a group chat and /start me.")
 
 
 @bot.message_handler(commands=['show_network'])
@@ -329,16 +351,24 @@ def set_member_name_command(message):
             msg = bot.send_message(
                 message.chat.id, "Reply this message and send me the new name.")
             bot.register_for_reply(
-                msg, set_name, network_id=network_id, node_id=node_id)
+                msg, set_member_name, network_id=network_id, node_id=node_id)
 
 
-def set_name(message, network_id: str, node_id: str):
-    json_data = myZeroTier.set_up_member(
-        network_id, node_id, name=message.text)
-    if json_data['name'] == message.text:
-        bot.send_message(message.chat.id, "Done.")
+def set_member_name(message, network_id: str, node_id: str):
+    if is_chat_admin(message, message.from_user.id):
+        json_data = myZeroTier.set_up_member(
+            network_id, node_id, name=message.text)
+        if json_data['name'] == message.text:
+            msg = """*Name changed by admin* @{}
+
+networkId: `{}`
+nodeId: `{}`
+name: `{}`""".format(message.from_user.username, network_id, node_id, message.text)
+            bot.send_message(message.chat.id, msg, parse_mode="markdown")
+        else:
+            bot.send_message(message.chat.id, "Failed.")
     else:
-        bot.send_message(message.chat.id, "Failed.")
+        bot.send_message(message.chat.id, "Admin only!")
 
 
 @bot.message_handler(commands=['auth_member'])
@@ -350,7 +380,11 @@ def unauth_member_command(message):
             json_data = myZeroTier.set_up_member(
                 network_id=network_id, node_id=node_id, authorized=True)
             if json_data['config']['authorized'] == True:
-                bot.send_message(message.chat.id, "Done.")
+                msg = """*Member authorized by admin* @{}
+
+networkId: {}
+nodeId: {}""".format(message.from_user.username, network_id, node_id)
+                bot.send_message(message.chat.id, msg, parse_mode="markdown")
             else:
                 bot.send_message(message.chat.id, "Failed.")
 
@@ -364,6 +398,10 @@ def unauth_member_command(message):
             json_data = myZeroTier.set_up_member(
                 network_id=network_id, node_id=node_id, authorized=False)
             if json_data['config']['authorized'] == False:
-                bot.send_message(message.chat.id, "Done.")
+                msg = """*Member unauthorized by admin* @{}
+
+networkId: {}
+nodeId: {}""".format(message.from_user.username, network_id, node_id)
+                bot.send_message(message.chat.id, msg, parse_mode="markdown")
             else:
                 bot.send_message(message.chat.id, "Failed.")
