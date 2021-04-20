@@ -14,7 +14,7 @@ with open("config.yaml", "r", encoding="utf-8") as f:
     ZEROTIER_TOKEN = yaml_data['zerotier_token']
 
 
-class MyZerotier(object):
+class MyZeroTier(object):
     def __init__(self) -> None:
         super().__init__()
         header = {"Authorization": "Bearer {}".format(ZEROTIER_TOKEN)}
