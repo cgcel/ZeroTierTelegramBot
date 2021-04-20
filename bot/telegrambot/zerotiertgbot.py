@@ -8,7 +8,7 @@ from datetime import datetime
 import schedule
 import telebot
 import yaml
-from service.zerotier_service import MyZerotier
+from service.zerotier_service import MyZeroTier
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 with open("config.yaml", "r", encoding="utf-8") as f:
@@ -19,7 +19,7 @@ with open("config.yaml", "r", encoding="utf-8") as f:
 
 bot = telebot.TeleBot(BOT_TOKEN, parse_mode=None)
 
-myZerotier = MyZerotier()
+myZeroTier = MyZeroTier()
 
 pushed_node_id = {}  # store pushed node
 
@@ -40,9 +40,9 @@ def check_per_min():
     """check for updates from ZeroTier Web API
     """
     global pushed_node_id_list
-    network_list = myZerotier.get_network()
+    network_list = myZeroTier.get_network()
     for network in network_list:
-        new_member_list = myZerotier.get_network_member(
+        new_member_list = myZeroTier.get_network_member(
             network['id'], check_new_member=True)
         for new_member in new_member_list:
             if new_member['nodeId'] not in pushed_node_id:
@@ -136,7 +136,7 @@ def callback_query(call):
         global pushed_node_id
         network_id = call.data.split(":")[1].split(",")[0]
         node_id = call.data.split(":")[1].split(",")[1]
-        json_data = myZerotier.set_up_member(network_id, node_id)
+        json_data = myZeroTier.set_up_member(network_id, node_id)
         network_id = json_data['networkId']
         node_id = json_data['nodeId']
         member_name = "None" if len(
@@ -163,7 +163,7 @@ ManagedIPs: `{}`
         msg = """*Member rejected by admin*:
 NetworkId: `{}`
 NodeId: `{}`""".format(network_id, node_id)
-        if myZerotier.reject_member(network_id, node_id):
+        if myZeroTier.reject_member(network_id, node_id):
             bot.edit_message_text(msg, call.message.chat.id,
                                   call.message.id, reply_markup=None, parse_mode="markdown")
         try:
@@ -182,7 +182,7 @@ NodeId: `{}`""".format(network_id, node_id)
     elif call.data.split(":")[0] == "cb_network" or call.data.split(":")[0] == "cb_refresh_network_status" or call.data.split(":")[0] == "cb_show_ip":
         # bot.edit_message_reply_markup(call.message.chat.id, call.message.id, reply_markup=None)
         network_id = call.data.split(":")[1]
-        member_list = myZerotier.get_network_member(network_id)
+        member_list = myZeroTier.get_network_member(network_id)
         member_list = [
             {
                 'name': i['name'],
@@ -192,13 +192,13 @@ NodeId: `{}`""".format(network_id, node_id)
             }
             for i in member_list
         ]
-        network_name = myZerotier.get_network(
+        network_name = myZeroTier.get_network(
             network_id=network_id)['config']['name']
         send_msg = """Network *{}*:
----------------------------------------------------------------
+-----------------------------------------------------------
 🟢 -- _Online_  🔴 -- _Offline_
 ✅ -- _Authorized_  ❎ -- _Unauthorized_
----------------------------------------------------------------""".format(network_name.replace('_', '-'))
+-----------------------------------------------------------""".format(network_name.replace('_', '-'))
         for member in member_list:
             format_name = "None" if len(
                 member['name']) == 0 else member['name'].replace('_', '-')
@@ -213,7 +213,7 @@ NodeId: `{}`""".format(network_id, node_id)
             elif member['online'] == False and member['authorized'] == False:
                 send_msg += "\n🔴❎ {}: `{}`".format(format_name, format_ip)
         send_msg += """
----------------------------------------------------------------
+-----------------------------------------------------------
 _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         bot.edit_message_text(
             send_msg, call.message.chat.id, call.message.id, reply_markup=network_member_options_markup(network_id, "ip"), parse_mode="markdown")
@@ -221,7 +221,7 @@ _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     elif call.data.split(":")[0] == "cb_show_node_id":
         # bot.edit_message_reply_markup(call.message.chat.id, call.message.id, reply_markup=None)
         network_id = call.data.split(":")[1]
-        member_list = myZerotier.get_network_member(network_id)
+        member_list = myZeroTier.get_network_member(network_id)
         member_list = [
             {
                 'name': i['name'],
@@ -231,13 +231,13 @@ _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             }
             for i in member_list
         ]
-        network_name = myZerotier.get_network(
+        network_name = myZeroTier.get_network(
             network_id=network_id)['config']['name']
         send_msg = """Network *{}*:
----------------------------------------------------------------
+-----------------------------------------------------------
 🟢 -- _Online_  🔴 -- _Offline_
 ✅ -- _Authorized_  ❎ -- _Unauthorized_
----------------------------------------------------------------""".format(network_name.replace('_', '-'))
+-----------------------------------------------------------""".format(network_name.replace('_', '-'))
         for member in member_list:
             format_name = "None" if len(
                 member['name']) == 0 else member['name'].replace('_', '-')
@@ -251,21 +251,21 @@ _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             elif member['online'] == False and member['authorized'] == False:
                 send_msg += "\n🔴❎ {}: `{}`".format(format_name, node_id)
         send_msg += """
----------------------------------------------------------------
+-----------------------------------------------------------
 _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         bot.edit_message_text(
             send_msg, call.message.chat.id, call.message.id, reply_markup=network_member_options_markup(network_id, "node_id"), parse_mode="markdown")
 
     elif call.data == "cb_back" or call.data == "cb_refresh_network_list":
-        json_data = myZerotier.get_network()
+        json_data = myZeroTier.get_network()
         payload = [[x['config']['name'], x['config']['id']]
                    for x in json_data]  # [[network_name, network_id],...]
         send_msg = """*List of your networks:*
----------------------------------------------------------------"""
+-----------------------------------------------------------"""
         for i in json_data:
             send_msg += "\n🌐 {}: `{}`".format(i['config']
                                               ['name'].replace('_', '-'), i['config']['id'].replace('_', '-'))
-        send_msg += """---------------------------------------------------------------
+        send_msg += """-----------------------------------------------------------
 _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         bot.edit_message_text(send_msg, call.message.chat.id, call.message.id,
                               reply_markup=network_items_markup(payload), parse_mode="markdown")
@@ -306,15 +306,15 @@ Following the commands below to use this bot:
 @bot.message_handler(commands=['show_network'])
 def show_network_command(message):
     if is_chat_admin(message, message.from_user.id):
-        json_data = myZerotier.get_network()
+        json_data = myZeroTier.get_network()
         payload = [[x['config']['name'], x['config']['id']]
                    for x in json_data]  # [[network_name, network_id],...]
         send_msg = """*List of your networks:*
----------------------------------------------------------------"""
+-----------------------------------------------------------"""
         for i in json_data:
             send_msg += "\n🌐 {}: `{}`".format(i['config']
                                               ['name'].replace('_', '-'), i['config']['id'].replace('_', '-'))
-        send_msg += """---------------------------------------------------------------
+        send_msg += """-----------------------------------------------------------
 _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         bot.send_message(message.chat.id, send_msg,
                          reply_markup=network_items_markup(payload), parse_mode="markdown")
@@ -333,7 +333,7 @@ def set_member_name_command(message):
 
 
 def set_name(message, network_id: str, node_id: str):
-    json_data = myZerotier.set_up_member(
+    json_data = myZeroTier.set_up_member(
         network_id, node_id, name=message.text)
     if json_data['name'] == message.text:
         bot.send_message(message.chat.id, "Done.")
@@ -347,7 +347,7 @@ def unauth_member_command(message):
         if len(message.text.split(" ")[1:]) == 2:
             network_id = message.text.split(" ")[1]
             node_id = message.text.split(" ")[2]
-            json_data = myZerotier.set_up_member(
+            json_data = myZeroTier.set_up_member(
                 network_id=network_id, node_id=node_id, authorized=True)
             if json_data['config']['authorized'] == True:
                 bot.send_message(message.chat.id, "Done.")
@@ -361,7 +361,7 @@ def unauth_member_command(message):
         if len(message.text.split(" ")[1:]) == 2:
             network_id = message.text.split(" ")[1]
             node_id = message.text.split(" ")[2]
-            json_data = myZerotier.set_up_member(
+            json_data = myZeroTier.set_up_member(
                 network_id=network_id, node_id=node_id, authorized=False)
             if json_data['config']['authorized'] == False:
                 bot.send_message(message.chat.id, "Done.")
