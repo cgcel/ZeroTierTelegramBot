@@ -302,23 +302,20 @@ def start_command(message):
 @bot.message_handler(commands=['help'])
 def help_commad(message):
     if message.chat.type == "group":
-        if is_chat_admin(message, message.from_user.id):
-            if message.chat.id not in groups_id_list:
-                groups_id_list.append(message.chat.id)
-            help_text = '''
+        help_text = '''
 Following the commands below to use this bot:
 /help
-    Show commands list.
+Show commands list.
 /show_network
-    Show your zerotier networks.
+Show your zerotier networks.
 /set_member_name network_id node_id
-    Set your member's name by using this command.
+Set your member's name by using this command.
 /auth_member network_id node_id
-    Authorize a member.
+Authorize a member.
 /unauth_member network_id node_id
-    Unauthorize a member.
+Unauthorize a member.
 '''
-            bot.send_message(message.chat.id, help_text)
+        bot.send_message(message.chat.id, help_text)
     elif message.chat.type == "private":
         if message.chat.id in ADMIN_ID:
             bot.send_message(
@@ -352,6 +349,8 @@ def set_member_name_command(message):
                 message.chat.id, "Reply this message and send me the new name.")
             bot.register_for_reply(
                 msg, set_member_name, network_id=network_id, node_id=node_id)
+    else:
+        bot.send_message(message.chat.id, "Admin only!")
 
 
 def set_member_name(message, network_id: str, node_id: str):
@@ -387,6 +386,8 @@ nodeId: {}""".format(message.from_user.username, network_id, node_id)
                 bot.send_message(message.chat.id, msg, parse_mode="markdown")
             else:
                 bot.send_message(message.chat.id, "Failed.")
+    else:
+        bot.send_message(message.chat.id, "Admin only!")
 
 
 @bot.message_handler(commands=['unauth_member'])
@@ -405,3 +406,5 @@ nodeId: {}""".format(message.from_user.username, network_id, node_id)
                 bot.send_message(message.chat.id, msg, parse_mode="markdown")
             else:
                 bot.send_message(message.chat.id, "Failed.")
+    else:
+        bot.send_message(message.chat.id, "Admin only!")
