@@ -110,5 +110,5 @@ class MyZeroTier(object):
 
 
 if __name__ == "__main__":
-    myZerotier = MyZerotier()
+    myZerotier = MyZeroTier()
     # print(myZerotier.get_network())
