@@ -6,10 +6,10 @@
 
 * Show networks info
 * Show network members info
-* Set member name
-* Authorize new member
-* Unauthorize member
-* Set sub admin (Invite your friends to group chat and manage the network with you)
+* Set member name (Admin only)
+* Authorize new member (Admin only)
+* Unauthorize member (Admin only)
+* Set sub admin (Invite your friends to group chat, set as admin and manage the network with you)
 
 ## Getting Started
 
