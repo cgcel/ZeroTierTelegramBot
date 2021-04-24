@@ -306,15 +306,15 @@ def help_commad(message):
         help_text = '''
 Following the commands below to use this bot:
 /help
-Show commands list.
+    Show commands list.
 /show_network
-Show your zerotier networks.
+    Show your zerotier networks.
 /set_member_name network_id node_id
-Set your member's name by using this command.
+    Set your member's name by using this command.
 /auth_member network_id node_id
-Authorize a member.
+    Authorize a member.
 /unauth_member network_id node_id
-Unauthorize a member.
+    Unauthorize a member.
 '''
         bot.send_message(message.chat.id, help_text)
     elif message.chat.type == "private":
