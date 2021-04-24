@@ -4,6 +4,7 @@
 
 import time
 from datetime import datetime
+from retry import retry
 
 import schedule
 import telebot
@@ -44,7 +45,7 @@ def is_chat_admin(message, id: str):
     else:
         return False
 
-
+@retry(tries=3)
 def check_per_min():
     """check for updates from ZeroTier Web API
     """
@@ -346,7 +347,7 @@ def set_member_name_command(message):
             network_id = message.text.split(" ")[1]
             node_id = message.text.split(" ")[2]
             msg = bot.send_message(
-                message.chat.id, "Reply this message and send me the new name.")
+                message.chat.id, "Set name by repling this message with your prefer name")
             bot.register_for_reply(
                 msg, set_member_name, network_id=network_id, node_id=node_id)
     else:
