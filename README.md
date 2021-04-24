@@ -67,5 +67,5 @@
     $ python3 bot
     ```
 
-    Invite your bot to a group chat and promote to admin, then send `/start@your_bot` in group chat, and you can start to manage your ZeroTier Networks.
+    Invite your bot to a group chat, send `/start@your_bot` in group chat, and you can start to manage your ZeroTier Networks.
 
