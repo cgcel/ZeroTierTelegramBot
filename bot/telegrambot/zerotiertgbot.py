@@ -1,16 +1,21 @@
-# !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # author: elvin
 
+import logging
 import time
 from datetime import datetime
-from retry import retry
 
 import schedule
 import telebot
 import yaml
+from retry import retry
 from service.zerotier_service import MyZeroTier
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+logging.basicConfig(level=logging.ERROR,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = telebot.logger
+logger.setLevel(logging.DEBUG)
 
 with open("config.yaml", "r", encoding="utf-8") as f:
     yaml_data = yaml.safe_load(f)
@@ -45,44 +50,50 @@ def is_chat_admin(message, id: str):
     else:
         return False
 
+
 @retry(tries=3)
 def check_per_min():
     """check for updates from ZeroTier Web API
     """
     global pushed_node_id_list
-    network_list = myZeroTier.get_network()
-    for network in network_list:
-        new_member_list = myZeroTier.get_network_member(
-            network['id'], check_new_member=True)
-        for new_member in new_member_list:
-            if new_member['nodeId'] not in pushed_node_id:
-                send_msg = """*New member attached!*
+    try:
+        network_list = myZeroTier.get_network()
+        for network in network_list:
+            new_member_list = myZeroTier.get_network_member(
+                network['id'], check_new_member=True)
+            for new_member in new_member_list:
+                if new_member['nodeId'] not in pushed_node_id:
+                    send_msg = """*New member attached!*
 
 networkId: `{}`
 nodeId: `{}`
 online: `{}`
 """.format(new_member['networkId'], new_member['nodeId'], new_member['online'])
-                pushed_node_id[new_member['nodeId']] = {
-                    'online': new_member['online']}
-                for group_id in groups_id_list:
-                    bot.send_message(group_id, send_msg, reply_markup=new_member_options_markup(
-                        new_member['networkId'], new_member['nodeId']), parse_mode="markdown")
+                    pushed_node_id[new_member['nodeId']] = {
+                        'online': new_member['online']}
+                    for group_id in groups_id_list:
+                        bot.send_message(group_id, send_msg, reply_markup=new_member_options_markup(
+                            new_member['networkId'], new_member['nodeId']), parse_mode="markdown")
 
-            elif new_member['nodeId'] in pushed_node_id:
-                if pushed_node_id[new_member['nodeId']]['online'] != new_member['online']:
-                    if pushed_node_id[new_member['nodeId']]['online'] == False:
-                        send_msg = """*New member attached!*
+                elif new_member['nodeId'] in pushed_node_id:
+                    if pushed_node_id[new_member['nodeId']]['online'] != new_member['online']:
+                        if pushed_node_id[new_member['nodeId']]['online'] == False:
+                            send_msg = """*New member attached!*
 
 networkId: `{}`
 nodeId: `{}`
 online: `{}`
 """.format(new_member['networkId'], new_member['nodeId'], new_member['online'])
-                        pushed_node_id[new_member['nodeId']]['online'] = True
-                        for group_id in groups_id_list:
-                            bot.send_message(group_id, send_msg, reply_markup=new_member_options_markup(
-                                new_member['networkId'], new_member['nodeId']), parse_mode="markdown")
-                    elif pushed_node_id[new_member['nodeId']]['online'] == True:
-                        pushed_node_id[new_member['nodeId']]['online'] = False
+                            pushed_node_id[new_member['nodeId']
+                                           ]['online'] = True
+                            for group_id in groups_id_list:
+                                bot.send_message(group_id, send_msg, reply_markup=new_member_options_markup(
+                                    new_member['networkId'], new_member['nodeId']), parse_mode="markdown")
+                        elif pushed_node_id[new_member['nodeId']]['online'] == True:
+                            pushed_node_id[new_member['nodeId']
+                                           ]['online'] = False
+    except Exception as e:
+        logger.error(e)
 
 
 def run_schedule():
@@ -134,7 +145,7 @@ def callback_query(call):
 
     Args:
         call ([type]): [description]
-    """    
+    """
 
     if call.data.split(":")[0] == "cb_accept":
         global pushed_node_id

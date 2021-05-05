@@ -1,8 +1,5 @@
-# !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # author: elvin
-
-import json
 
 import requests
 import yaml
@@ -21,7 +18,7 @@ class MyZeroTier(object):
         self.session = requests.Session()
         self.session.headers.update(header)
 
-    def get_network(self, network_id=None):
+    def get_network(self, network_id: str = None):
         """Get network funtion, used to get your networks' informations.
 
         Args:
@@ -39,7 +36,7 @@ class MyZeroTier(object):
             json_data = self.session.get(url).json()
             return json_data
 
-    def get_network_member(self, network_id, check_new_member=False):
+    def get_network_member(self, network_id: str, check_new_member: bool = False):
         """A funtion used to get network members or check for new members.
 
         Args:
@@ -64,7 +61,7 @@ class MyZeroTier(object):
                     member_list.append(i)
             return member_list
 
-    def set_up_member(self, network_id, node_id, hidden=False, name=None, description=None, authorized=True):
+    def set_up_member(self, network_id: str, node_id: str, hidden: bool = False, name: str = None, description: str = None, authorized: bool = True):
         """A funtion used to set up your network member
 
         Args:
@@ -91,7 +88,7 @@ class MyZeroTier(object):
         json_data = self.session.post(url, data=payload).json()
         return json_data
 
-    def reject_member(self, network_id, node_id):
+    def reject_member(self, network_id: str, node_id: str):
         """Reject member function. The member which you have deleted from network cannot join this network again.
 
         Args:
