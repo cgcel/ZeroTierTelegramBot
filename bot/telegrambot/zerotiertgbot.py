@@ -314,20 +314,24 @@ def start_command(message):
 @bot.message_handler(commands=['help'])
 def help_commad(message):
     if message.chat.type == "group":
-        help_text = '''
-Following the commands below to use this bot:
-/help
-    Show commands list.
-/show_network
-    Show your zerotier networks.
-/set_member_name network_id node_id
-    Set your member's name by using this command.
-/auth_member network_id node_id
-    Authorize a member.
-/unauth_member network_id node_id
-    Unauthorize a member.
+        help_text = '''*Following the commands below to use this bot:*
+
+`/help`
+_Show commands list._
+
+`/show_network`
+_Show your zerotier networks._
+
+`/set_member_name network_id node_id`
+_Set your member's name by using this command._
+
+`/auth_member network_id node_id`
+_Authorize a member._
+
+`/unauth_member network_id node_id`
+_Unauthorize a member._
 '''
-        bot.send_message(message.chat.id, help_text)
+        bot.send_message(message.chat.id, help_text, parse_mode="markdown")
     elif message.chat.type == "private":
         if message.chat.id in ADMIN_ID:
             bot.send_message(
