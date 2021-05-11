@@ -4,7 +4,7 @@
 
 import threading
 
-from telegrambot.zerotiertgbot import *
+from bot.zerotiertgbot import *
 
 if __name__ == '__main__':
     schedule.every(REFRESH_SECONDS).seconds.do(check_per_min)
