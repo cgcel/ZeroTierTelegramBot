@@ -330,6 +330,9 @@ _Authorize a member._
 
 `/unauth_member network_id node_id`
 _Unauthorize a member._
+
+`/delete_member network_id node_id`
+_Delete a member._
 '''
         bot.send_message(message.chat.id, help_text, parse_mode="markdown")
     elif message.chat.type == "private":
@@ -416,6 +419,26 @@ def unauth_member_command(message):
                 network_id=network_id, node_id=node_id, authorized=False)
             if json_data['config']['authorized'] == False:
                 msg = """*Member unauthorized by admin* @{}
+
+networkId: {}
+nodeId: {}""".format(message.from_user.username, network_id, node_id)
+                bot.send_message(message.chat.id, msg, parse_mode="markdown")
+            else:
+                bot.send_message(message.chat.id, "Failed.")
+    else:
+        bot.send_message(message.chat.id, "Admin only!")
+
+
+@bot.message_handler(commands=['delete_member'])
+def delete_member_command(message):
+    if is_chat_admin(message, message.from_user.id):
+        if len(message.text.split(" ")[1:]) == 2:
+            network_id = message.text.split(" ")[1]
+            node_id = message.text.split(" ")[2]
+            flag = myZeroTier.reject_member(
+                network_id=network_id, node_id=node_id)
+            if flag:
+                msg = """*Member deleted by admin* @{}
 
 networkId: {}
 nodeId: {}""".format(message.from_user.username, network_id, node_id)
