@@ -1,1 +1,9 @@
 config.yaml
+zerotiertelegrambot/__pycache__/__main__.cpython-38.pyc
+zerotiertelegrambot/bot/__pycache__/__init__.cpython-38.pyc
+zerotiertelegrambot/bot/__pycache__/command.cpython-38.pyc
+zerotiertelegrambot/bot/__pycache__/zerotiertgbot.cpython-38.pyc
+zerotiertelegrambot/service/__pycache__/__init__.cpython-38.pyc
+zerotiertelegrambot/service/__pycache__/zerotier_service.cpython-38.pyc
+__pycache__/zerotier_service.cpython-38.pyc
+.vscode/settings.json
