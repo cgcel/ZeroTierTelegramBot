@@ -66,7 +66,7 @@
 
     ```
     $ cd ZeroTierTelegramBot
-    $ python3 bot
+    $ python3 zerotiertelegrambot
     ```
 
     Invite your bot to a group chat, send `/start@your_bot` in group chat, and you can start to manage your ZeroTier Networks.
