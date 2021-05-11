@@ -9,6 +9,7 @@
 * Set member name (Admin only)
 * Authorize new member (Admin only)
 * Unauthorize member (Admin only)
+* Delete member (Admin only)
 * Set sub admin (Invite your friends to group chat, set as admin and manage the network with you)
 
 ## Getting Started
@@ -27,6 +28,7 @@
     set_member_name - Set your member's name by using this command.
     auth_member - Authorize a member.
     unauth_member - Unauthorize a member.
+    delete_member - Delete a member.
     ```
 
 3. Clone repository:
@@ -68,4 +70,3 @@
     ```
 
     Invite your bot to a group chat, send `/start@your_bot` in group chat, and you can start to manage your ZeroTier Networks.
-
