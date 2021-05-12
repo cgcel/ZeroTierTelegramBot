@@ -70,3 +70,25 @@
     ```
 
     Invite your bot to a group chat, send `/start@your_bot` in group chat, and you can start to manage your ZeroTier Networks.
+
+## Screenshots
+
+1. start&help
+
+    ![start&help](screenshots/start&help.png)
+
+2. show_network
+
+    ![show_network](screenshots/show_network.png)
+
+3. network_info
+
+    ![network_info](screenshots/network_info.png)
+
+4. accept&setname
+
+    ![accept&setname](screenshots/accept&setname.png)
+
+5. auth&setname
+
+    ![auth&setname](screenshots/auth&setname.png)
