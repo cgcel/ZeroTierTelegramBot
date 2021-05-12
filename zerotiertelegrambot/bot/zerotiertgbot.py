@@ -400,8 +400,8 @@ def unauth_member_command(message):
             if json_data['config']['authorized'] == True:
                 msg = """*Member authorized by admin* @{}
 
-networkId: {}
-nodeId: {}""".format(message.from_user.username, network_id, node_id)
+networkId: `{}`
+nodeId: `{}`""".format(message.from_user.username, network_id, node_id)
                 bot.send_message(message.chat.id, msg, parse_mode="markdown")
             else:
                 bot.send_message(message.chat.id, "Failed.")
@@ -420,8 +420,8 @@ def unauth_member_command(message):
             if json_data['config']['authorized'] == False:
                 msg = """*Member unauthorized by admin* @{}
 
-networkId: {}
-nodeId: {}""".format(message.from_user.username, network_id, node_id)
+networkId: `{}`
+nodeId: `{}`""".format(message.from_user.username, network_id, node_id)
                 bot.send_message(message.chat.id, msg, parse_mode="markdown")
             else:
                 bot.send_message(message.chat.id, "Failed.")
