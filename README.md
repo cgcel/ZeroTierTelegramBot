@@ -92,3 +92,7 @@
 5. auth&setname
 
     ![auth&setname](screenshots/auth&setname.png)
+
+6. new_member
+
+    ![new_member](screenshots/new_member.png)
