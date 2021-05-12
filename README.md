@@ -56,7 +56,7 @@
 
     # Fill with telegram id which you want to set as admin
     admin_id:
-    - your_telegram_id
+       - your_telegram_id
 
     # Fill with refresh seconds, used to check new members
     refresh_seconds: 60
