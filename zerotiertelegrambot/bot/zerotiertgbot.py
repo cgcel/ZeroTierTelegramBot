@@ -15,7 +15,7 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 logging.basicConfig(level=logging.ERROR,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = telebot.logger
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 
 with open("config.yaml", "r", encoding="utf-8") as f:
     yaml_data = yaml.safe_load(f)
