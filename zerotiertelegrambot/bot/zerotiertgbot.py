@@ -222,25 +222,33 @@ NodeId: `{}`""".format(call.from_user.username, network_id, node_id)
         network_name = myZeroTier.get_network(
             network_id=network_id)['config']['name']
         send_msg = """Network *{}*:
------------------------------------------------------------
+
 🟢 -- _Online_  🔴 -- _Offline_
 ☑ -- _Authorized_  ◻ -- _Unauthorized_
------------------------------------------------------------""".format(network_name.replace('_', '-'))
+""".format(network_name.replace('_', '-'))
         for member in member_list:
             format_name = "None" if len(
                 member['name']) == 0 else member['name'].replace('_', '-')
             format_ip = "None" if len(
                 member['ipAssignments']) == 0 else member['ipAssignments'][0]
             if member['online'] == True and member['authorized'] == True:
-                send_msg += "\n🟢☑ {}: `{}`".format(format_name, format_ip)
+                send_msg += """
+🟢☑ *{}*:
+        -- `{}`""".format(format_name, format_ip)
             elif member['online'] == False and member['authorized'] == True:
-                send_msg += "\n🔴☑ {}: `{}`".format(format_name, format_ip)
+                send_msg += """
+🔴☑ *{}*:
+        -- `{}`""".format(format_name, format_ip)
             elif member['online'] == True and member['authorized'] == False:
-                send_msg += "\n🟢◻ {}: `{}`".format(format_name, format_ip)
+                send_msg += """
+🟢◻ *{}*:
+        -- `{}`""".format(format_name, format_ip)
             elif member['online'] == False and member['authorized'] == False:
-                send_msg += "\n🔴◻ {}: `{}`".format(format_name, format_ip)
+                send_msg += """
+🔴◻ *{}*:
+        -- `{}`""".format(format_name, format_ip)
         send_msg += """
------------------------------------------------------------
+
 _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         bot.edit_message_text(
             send_msg, call.message.chat.id, call.message.id, reply_markup=network_member_options_markup(network_id, "ip"), parse_mode="markdown")
@@ -260,24 +268,32 @@ _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         network_name = myZeroTier.get_network(
             network_id=network_id)['config']['name']
         send_msg = """Network *{}*:
------------------------------------------------------------
+
 🟢 -- _Online_  🔴 -- _Offline_
 ☑ -- _Authorized_  ◻ -- _Unauthorized_
------------------------------------------------------------""".format(network_name.replace('_', '-'))
+""".format(network_name.replace('_', '-'))
         for member in member_list:
             format_name = "None" if len(
                 member['name']) == 0 else member['name'].replace('_', '-')
             node_id = member['nodeId']
             if member['online'] == True and member['authorized'] == True:
-                send_msg += "\n🟢☑ {}: `{}`".format(format_name, node_id)
+                send_msg += """
+🟢☑ *{}*:
+        -- `{}`""".format(format_name, node_id)
             elif member['online'] == False and member['authorized'] == True:
-                send_msg += "\n🔴☑ {}: `{}`".format(format_name, node_id)
+                send_msg += """
+🔴☑ *{}*:
+        -- `{}`""".format(format_name, node_id)
             elif member['online'] == True and member['authorized'] == False:
-                send_msg += "\n🟢◻ {}: `{}`".format(format_name, node_id)
+                send_msg += """
+🟢◻ *{}*:
+        -- `{}`""".format(format_name, node_id)
             elif member['online'] == False and member['authorized'] == False:
-                send_msg += "\n🔴◻ {}: `{}`".format(format_name, node_id)
+                send_msg += """
+🔴◻ *{}*:
+        -- `{}`""".format(format_name, node_id)
         send_msg += """
------------------------------------------------------------
+
 _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         bot.edit_message_text(
             send_msg, call.message.chat.id, call.message.id, reply_markup=network_member_options_markup(network_id, "node_id"), parse_mode="markdown")
@@ -287,11 +303,13 @@ _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         payload = [[x['config']['name'], x['config']['id']]
                    for x in json_data]  # [[network_name, network_id],...]
         send_msg = """*List of your networks:*
------------------------------------------------------------"""
+"""
         for i in json_data:
-            send_msg += "\n🌐 {}: `{}`".format(i['config']
-                                              ['name'].replace('_', '-'), i['config']['id'].replace('_', '-'))
-        send_msg += """-----------------------------------------------------------
+            send_msg += """
+🌐 {}:
+    -- `{}`
+""".format(i['config']['name'].replace('_', '-'), i['config']['id'].replace('_', '-'))
+        send_msg += """
 _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         bot.edit_message_text(send_msg, call.message.chat.id, call.message.id,
                               reply_markup=network_items_markup(payload), parse_mode="markdown")
@@ -348,11 +366,13 @@ def show_network_command(message):
         payload = [[x['config']['name'], x['config']['id']]
                    for x in json_data]  # [[network_name, network_id],...]
         send_msg = """*List of your networks:*
------------------------------------------------------------"""
+"""
         for i in json_data:
-            send_msg += "\n🌐 {}: `{}`".format(i['config']
-                                              ['name'].replace('_', '-'), i['config']['id'].replace('_', '-'))
-        send_msg += """-----------------------------------------------------------
+            send_msg += """
+🌐 {}:
+    -- `{}`
+""".format(i['config']['name'].replace('_', '-'), i['config']['id'].replace('_', '-'))
+        send_msg += """
 _Updated at: {}_""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         bot.send_message(message.chat.id, send_msg,
                          reply_markup=network_items_markup(payload), parse_mode="markdown")
