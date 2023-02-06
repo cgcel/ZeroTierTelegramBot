@@ -30,6 +30,11 @@
     unauth_member - Unauthorize a member.
     delete_member - Delete a member.
     ```
+    
+    **When creating a bot, you need to specify:**
+
+    - /setjoingroups -- enable
+    - /setprivacy -- disable
 
 3. Clone repository:
 
